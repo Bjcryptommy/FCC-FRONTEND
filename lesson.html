@@ -1,239 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Lesson - FCC Clone</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
-    <style>
-      iframe {
-        width: 100%;
-        height: 300px;
-        border: none;
-        margin-bottom: 20px;
-      }
-      .quiz-option {
-        margin-bottom: 10px;
-      }
-      .quiz-option button {
-        padding: 8px 15px;
-        border-radius: 6px;
-        border: none;
-        background: #4caf50;
-        color: white;
-        cursor: pointer;
-      }
-      .quiz-option button:hover {
-        background: #45a049;
-      }
-      .comment-section {
-        margin-top: 40px;
-      }
-      .comment-box textarea {
-        width: 100%;
-        height: 80px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        margin-bottom: 10px;
-      }
-      .comment-box button {
-        background-color: #4caf50;
-        color: white;
-        padding: 8px 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      .comment-box button:hover {
-        background-color: #45a049;
-      }
-      .comment-list {
-        margin-top: 15px;
-      }
-      .comment {
-        padding: 10px;
-        background: #f1f1f1;
-        border-radius: 5px;
-        margin-bottom: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- 🔗 Sidebar placeholder -->
-    <div id="sidebar-placeholder"></div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Lesson - FCC Clone</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    iframe {
+      width: 100%;
+      height: 300px;
+      border: none;
+      margin-bottom: 20px;
+    }
+    .quiz-option {
+      margin-bottom: 10px;
+    }
+    .quiz-option button,
+    .comment-box button,
+    .lesson-nav button {
+      padding: 8px 15px;
+      border-radius: 6px;
+      border: none;
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .quiz-option button:hover,
+    .comment-box button:hover,
+    .lesson-nav button:hover {
+      background: #45a049;
+    }
+    .comment-section {
+      margin-top: 40px;
+    }
+    .comment-box textarea {
+      width: 100%;
+      height: 80px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .comment-list {
+      margin-top: 15px;
+    }
+    .comment {
+      padding: 10px;
+      background: #f1f1f1;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .lesson-nav {
+      text-align: center;
+      margin-top: 25px;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
 
-    <!-- 📚 Lesson Content -->
-    <div class="container">
-      <h1 id="lessonTitle">Lesson</h1>
-      <iframe id="lessonVideo" allowfullscreen></iframe>
-      <p id="lessonText">Loading content...</p>
+  <div class="container">
+    <h1 id="lessonTitle">Lesson</h1>
+    <iframe id="lessonVideo" allowfullscreen></iframe>
+    <p id="lessonText">Loading content...</p>
 
-      <hr />
-      <h2>Quiz</h2>
-      <div id="quizContainer"></div>
-      <p id="feedback" style="margin-top: 15px"></p>
+    <hr />
+    <h2>Quiz</h2>
+    <div id="quizContainer"></div>
+    <p id="feedback" style="margin-top: 15px"></p>
 
-      <hr />
-      <div class="comment-section">
-        <h2>💬 Comments</h2>
-        <div class="comment-box">
-          <textarea
-            id="commentInput"
-            placeholder="Write your comment..."
-          ></textarea>
-          <button onclick="postComment()">Post Comment</button>
-        </div>
-        <div id="commentList" class="comment-list"></div>
-      </div>
+    <div class="lesson-nav">
+      <button id="prevLessonBtn" style="display:none;">⬅️ Prev Lesson</button>
+      <button id="nextLessonBtn" style="display:none;">Next Lesson ⏭️</button>
+      <button id="doneBtn" style="display:none; background-color: #2196f3;">✅ Done</button>
     </div>
 
-    <script>
-      const lessonId = new URLSearchParams(window.location.search).get(
-        "lesson_id"
-      );
-      const username = localStorage.getItem("username");
+    <hr />
+    <div class="comment-section">
+      <h2>💬 Comments</h2>
+      <div class="comment-box">
+        <textarea id="commentInput" placeholder="Write your comment..."></textarea>
+        <button onclick="postComment()">Post Comment</button>
+      </div>
+      <div id="commentList" class="comment-list"></div>
+    </div>
+  </div>
 
-      if (!lessonId || !username) {
-        alert("Missing lesson or user. Please log in again.");
-        window.location.href = "login.html";
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lessonId = parseInt(params.get("lesson_id"));
+    const courseId = parseInt(params.get("course_id"));
+    const username = localStorage.getItem("username");
+    const backendURL = "https://fcc-backend-v2.onrender.com"; // update to hosted URL when live
+
+    if (!lessonId || !username || !courseId) {
+      alert("Missing lesson or user. Please log in again.");
+      window.location.href = "login.html";
+    }
+
+    let lessonsList = [];
+
+    async function loadLesson() {
+      const res = await fetch(`${backendURL}/courses/${courseId}/lessons`);
+      const data = await res.json();
+      lessonsList = data;
+      const lesson = data.find(l => l.id === lessonId);
+
+      if (!lesson) {
+        document.getElementById("lessonText").innerText = "Lesson not found.";
+        return;
       }
 
-      loadLesson();
-      loadQuiz();
-      loadComments();
+      document.getElementById("lessonTitle").innerText = lesson.title;
+      document.getElementById("lessonText").innerText = lesson.lesson_text;
+      document.getElementById("lessonVideo").src = transformYouTubeLink(lesson.video_url);
 
-      async function loadLesson() {
-        const res = await fetch(
-          `https://fcc-backend-v2.onrender.com/courses/1/lessons`
-        );
-        const data = await res.json();
-        const lesson = data.find((l) => l.id == lessonId);
+      handleLessonNavigationButtons(lessonId);
+    }
 
-        if (!lesson) {
-          document.getElementById("lessonText").innerText = "Lesson not found.";
-          return;
-        }
+    function transformYouTubeLink(url) {
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+      return match ? `https://www.youtube.com/embed/${match[1]}` : url;
+    }
 
-        document.getElementById("lessonTitle").innerText = lesson.title;
-        document.getElementById("lessonText").innerText = lesson.lesson_text;
-        document.getElementById("lessonVideo").src = lesson.video_url;
+    function handleLessonNavigationButtons(currentId) {
+      const currentIndex = lessonsList.findIndex(l => l.id === currentId);
+
+      const prevLesson = lessonsList[currentIndex - 1];
+      const nextLesson = lessonsList[currentIndex + 1];
+
+      const prevBtn = document.getElementById("prevLessonBtn");
+      const nextBtn = document.getElementById("nextLessonBtn");
+      const doneBtn = document.getElementById("doneBtn");
+
+      if (prevLesson) {
+        prevBtn.style.display = "inline-block";
+        prevBtn.onclick = () => {
+          window.location.href = `lesson.html?course_id=${courseId}&lesson_id=${prevLesson.id}`;
+        };
       }
 
-      async function loadQuiz() {
-        const res = await fetch(
-          `https://fcc-backend-v2.onrender.com/quiz/${lessonId}`
-        );
-        const data = await res.json();
-        const quizBox = document.getElementById("quizContainer");
-        quizBox.innerHTML = "";
-
-        if (data.length === 0) {
-          quizBox.innerHTML = "<p>No quiz available for this lesson.</p>";
-          return;
-        }
-
-        const question = data[0];
-        const q = document.createElement("p");
-        q.innerText = question.question;
-        quizBox.appendChild(q);
-
-        question.answers.forEach((ans) => {
-          const div = document.createElement("div");
-          div.className = "quiz-option";
-
-          const btn = document.createElement("button");
-          btn.innerText = ans.text;
-          btn.onclick = () => submitAnswer(question.id, ans.id);
-
-          div.appendChild(btn);
-          quizBox.appendChild(div);
-        });
+      if (nextLesson) {
+        nextBtn.style.display = "inline-block";
+        nextBtn.onclick = () => {
+          window.location.href = `lesson.html?course_id=${courseId}&lesson_id=${nextLesson.id}`;
+        };
       }
 
-      async function submitAnswer(questionId, answerId) {
-        const res = await fetch(
-          "https://fcc-backend-v2.onrender.com/submit-answer",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username,
-              question_id: questionId,
-              answer_id: answerId,
-            }),
-          }
-        );
-
-        const data = await res.json();
+      // If it's the last lesson, show Done button
+      if (!nextLesson) {
+        doneBtn.style.display = "inline-block";
+        doneBtn.onclick = () => {
         const feedback = document.getElementById("feedback");
-        if (data.correct) {
-          feedback.innerText = `✅ ${data.message} (+${data.points_awarded} pts)`;
-        } else {
-          feedback.innerText = `❌ ${data.message}`;
+        feedback.innerText = "🎉 You've completed the course! Redirecting...";
+        setTimeout(() => {
+          window.location.href = "student-dashboard.html"; // change if needed
+        }, 2000); // 1 second delay
+      };
+      }
+    }
+
+    async function loadQuiz() {
+      const res = await fetch(`${backendURL}/quiz/${lessonId}`);
+      const data = await res.json();
+      const quizBox = document.getElementById("quizContainer");
+      quizBox.innerHTML = "";
+
+      if (data.length === 0) {
+        quizBox.innerHTML = "<p>No quiz available for this lesson.</p>";
+        return;
+      }
+
+      const question = data[0];
+      const q = document.createElement("p");
+      q.innerText = question.question;
+      quizBox.appendChild(q);
+
+      question.answers.forEach(ans => {
+        const div = document.createElement("div");
+        div.className = "quiz-option";
+
+        const btn = document.createElement("button");
+        btn.innerText = ans.text;
+        btn.onclick = () => submitAnswer(question.id, ans.id);
+
+        div.appendChild(btn);
+        quizBox.appendChild(div);
+      });
+    }
+
+    async function submitAnswer(questionId, answerId) {
+      const res = await fetch(`${backendURL}/submit-answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, question_id: questionId, answer_id: answerId }),
+      });
+
+      const data = await res.json();
+      const feedback = document.getElementById("feedback");
+      feedback.innerText = data.correct
+        ? `✅ ${data.message} (+${data.points_awarded} pts)`
+        : `❌ ${data.message}`;
+    }
+
+    async function postComment() {
+      const text = document.getElementById("commentInput").value.trim();
+      if (!text) return;
+
+      await fetch(`${backendURL}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, lesson_id: lessonId, text }),
+      });
+
+      document.getElementById("commentInput").value = "";
+      loadComments();
+    }
+
+    async function loadComments() {
+      const res = await fetch(`${backendURL}/comments/${lessonId}`);
+      const data = await res.json();
+      const list = document.getElementById("commentList");
+      list.innerHTML = "";
+
+      data.forEach(comment => {
+        const div = document.createElement("div");
+        div.className = "comment";
+        div.innerHTML = `<strong>${comment.username}</strong><br>${comment.text}`;
+        list.appendChild(div);
+      });
+    }
+
+    fetch("sidebar.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("sidebar-placeholder").innerHTML = html;
+
+        const menuBtn = document.querySelector(".menu-toggle");
+        const closeBtn = document.getElementById("closeSidebar");
+
+        if (menuBtn && closeBtn) {
+          menuBtn.addEventListener("click", () => {
+            document.getElementById("sidebar").classList.toggle("open");
+          });
+
+          closeBtn.addEventListener("click", () => {
+            document.getElementById("sidebar").classList.toggle("open");
+          });
         }
-      }
 
-      async function postComment() {
-        const text = document.getElementById("commentInput").value.trim();
-        if (!text) return;
+        const logoutBtn = document.querySelector("a[href='#'][onclick='logout()']");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.clear();
+            window.location.href = "login.html";
+          });
+        }
+      });
 
-        await fetch("https://fcc-backend-v2.onrender.com/comments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, lesson_id: lessonId, text }),
-        });
-
-        document.getElementById("commentInput").value = "";
-        loadComments();
-      }
-
-      async function loadComments() {
-        const res = await fetch(
-          `https://fcc-backend-v2.onrender.com/comments/${lessonId}`
-        );
-        const data = await res.json();
-        const list = document.getElementById("commentList");
-        list.innerHTML = "";
-
-        data.forEach((comment) => {
-          const div = document.createElement("div");
-          div.className = "comment";
-          div.innerHTML = `<strong>${comment.username}</strong><br>${comment.text}`;
-          list.appendChild(div);
-        });
-      }
-
-      // 🚀 Load sidebar and enable toggle
-      fetch("sidebar.html")
-        .then((res) => res.text())
-        .then((html) => {
-          document.getElementById("sidebar-placeholder").innerHTML = html;
-
-          const menuBtn = document.querySelector(".menu-toggle");
-          const closeBtn = document.getElementById("closeSidebar");
-
-          if (menuBtn && closeBtn) {
-            menuBtn.addEventListener("click", () => {
-              document.getElementById("sidebar").classList.toggle("open");
-            });
-
-            closeBtn.addEventListener("click", () => {
-              document.getElementById("sidebar").classList.toggle("open");
-            });
-          }
-
-          const logoutBtn = document.querySelector(
-            "a[href='#'][onclick='logout()']"
-          );
-          if (logoutBtn) {
-            logoutBtn.addEventListener("click", (e) => {
-              e.preventDefault();
-              localStorage.clear();
-              window.location.href = "login.html";
-            });
-          }
-        });
-    </script>
-  </body>
+    loadLesson();
+    loadQuiz();
+    loadComments();
+  </script>
+</body>
 </html>
