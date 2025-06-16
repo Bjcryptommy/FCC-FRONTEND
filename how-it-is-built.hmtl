@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How We Built It - FCC Clone Project</title>
+  <script src="https://cdn.jsdelivr.net/github-cards/latest/widget.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    pre {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      overflow-x: auto;
+      border-radius: 5px;
+    }
+    a.button {
+      display: inline-block;
+      background: #007BFF;
+      color: white;
+      padding: 10px 15px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    .github-card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>FCC Clone - How We Built the Project (Step-by-Step Documentation)</h1>
+  <p>This document explains everything about how we built our Free Coding Camp (FCC) Clone from scratch. If you're new or want to learn how to build a web project with backend, frontend, and database, this is for you.</p>
+
+  <h2>🧰 Tools & Technologies Used</h2>
+  <ul>
+    <li><strong>Backend:</strong> Flask (Python) – Handles all backend logic and routes</li>
+    <li><strong>Database:</strong> PostgreSQL (Render) – Stores all user/course/lesson data</li>
+    <li><strong>Frontend:</strong> HTML, CSS, JS – User interface of the platform</li>
+    <li><strong>Hosting:</strong> Backend on Render, Frontend on Vercel</li>
+  </ul>
+
+    <h2>🔗 GitHub Repositories</h2>
+    <p>You can view the complete source code for both frontend and backend on GitHub:</p>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+    <div>
+        <h3>🔧 Backend</h3>
+        <p>Built with Flask and PostgreSQL</p>
+        <a class="button" href="https://github.com/Bjcryptommy/FCC-BACKEND-V2" target="_blank">View Backend on GitHub</a>
+        <img src="https://opengraph.githubassets.com/1/Bjcryptommy/FCC-BACKEND-V2" width="400" alt="Backend Preview">
+    </div>
+    <div>
+        <h3>🎨 Frontend</h3>
+        <p>Built with HTML, CSS, and JS</p>
+        <a class="button" href="https://github.com/Bjcryptommy/FCC-FRONTEND" target="_blank">View Frontend on GitHub</a>
+        <img src="https://opengraph.githubassets.com/1/Bjcryptommy/FCC-FRONTEND" width="400" alt="Frontend Preview">
+    </div>
+    </div>
+
+
+  <h2>📁 Folder Structure (Backend)</h2>
+  <pre><code>FCC-BACKEND-V2/
+├── routes/        # All route files (auth, quiz, course, comment)
+├── models.py      # All database tables defined here
+├── app.py         # Main Flask application
+├── .env           # Database credentials (Not uploaded)</code></pre>
+
+  <h2>1️⃣ Planning the Project</h2>
+  <p>We asked: What should a learning platform have?</p>
+  <ul>
+    <li>Users (students and admins)</li>
+    <li>Courses (HTML, CSS, JS)</li>
+    <li>Lessons under each course</li>
+    <li>Quizzes after each lesson</li>
+    <li>Points system</li>
+    <li>Comment system</li>
+  </ul>
+
+  <h2>2️⃣ Setting up Backend (Flask)</h2>
+  <pre><code>app = Flask(__name__)
+CORS(app)
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(course_bp)
+app.register_blueprint(quiz_bp)
+app.register_blueprint(comment_bp)</code></pre>
+  <p><strong>.env file (kept secret):</strong></p>
+  <pre><code>DB_HOST=dpg-xxx.oregon-postgres.render.com
+DB_NAME=fcc_clone
+DB_USER=fcc_clone_user
+DB_PASSWORD=xxxxxx
+DB_PORT=5432</code></pre>
+
+  <h2>3️⃣ User System (Register/Login)</h2>
+  <p>Register</p>
+  <pre><code>@auth_bp.route('/register')
+def register():
+    cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)")</code></pre>
+  <p>Login</p>
+  <pre><code>@auth_bp.route('/login')
+def login():
+    cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s")</code></pre>
+
+  <h2>4️⃣ Admin Features</h2>
+  <ul>
+    <li>Add Courses: POST /courses</li>
+    <li>Add Lessons: POST /lessons</li>
+  </ul>
+  <pre><code>cursor.execute("SELECT role FROM users WHERE username = %s")
+if role != 'admin': return error</code></pre>
+
+  <h2>5️⃣ Courses & Lessons</h2>
+  <pre><code>@course_bp.route('/lessons', methods=['POST'])
+def add_lesson():
+    cursor.execute("INSERT INTO lessons (...) VALUES (...)")</code></pre>
+
+  <h2>6️⃣ Quizzes</h2>
+  <pre><code>@quiz_bp.route('/questions', methods=['POST'])
+def add_question():
+    cursor.execute("INSERT INTO questions (...) VALUES (...)")
+
+@quiz_bp.route('/answers')
+def add_answers():
+    cursor.execute("INSERT INTO answers (question_id, answer_text)")</code></pre>
+  <p><strong>Scoring:</strong></p>
+  <ul>
+    <li>1st try: 10 points</li>
+    <li>2nd try: 7 points</li>
+    <li>3rd try: 5 points</li>
+  </ul>
+
+  <h2>7️⃣ Comments</h2>
+  <pre><code>@comment_bp.route('', methods=['POST'])
+def post_comment():
+    cursor.execute("INSERT INTO comments (lesson_id, username, text)")</code></pre>
+
+  <h2>8️⃣ Tracking Progress</h2>
+  <pre><code>CREATE TABLE user_attempts (
+  user_id INTEGER,
+  question_id INTEGER,
+  attempts INTEGER,
+  is_correct BOOLEAN
+);</code></pre>
+
+  <h2>9️⃣ Frontend Connection</h2>
+  <p>Frontend uses HTML, CSS, and JavaScript.</p>
+  <pre><code>fetch("https://fcc-backend-v2.onrender.com/auth/register", {...})</code></pre>
+
+  <h2>🔟 Hosting</h2>
+  <ul>
+    <li><strong>Backend:</strong> Render (auto-deploy from GitHub)</li>
+    <li><strong>Frontend:</strong> Vercel (auto-deploy from GitHub)</li>
+  </ul>
+
+  <h2>✅ Final Features Recap</h2>
+  <ul>
+    <li>User Auth: Register/Login with role-based access</li>
+    <li>Admin Panel: Add courses and lessons</li>
+    <li>Lesson Content: Text + YouTube video</li>
+    <li>Quiz System: Questions, answers, scoring</li>
+    <li>Comments: Per lesson</li>
+    <li>Progress Tracking: Attempts + scores</li>
+    <li>Leaderboard: Based on total points</li>
+  </ul>
+
+  <h2>👨‍💻 Made by</h2>
+  <p><strong>Bolaji Oluwatomiwa & Team</strong><br>
+     Lead City University – 200 Level Software Engineering – Group Project</p>
+</body>
+</html>
